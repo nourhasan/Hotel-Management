@@ -1,4 +1,5 @@
-﻿using DataLayer;
+﻿using EntityLayer;
+using Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,27 +10,28 @@ namespace Hotel_Management.Controllers
 {
     public class CustomerController : Controller
     {
-        //private CustomerRepository repo = new CustomerRepository();
-        private RoomAvRepository roomavRepo = new RoomAvRepository();
-        private RoomRepository roomRepo = new RoomRepository();
-        private NotificationRepository notiRepo = new NotificationRepository();
-        private CustomerRepository cusRepo = new CustomerRepository();
+        //private CustomerService repo = new CustomerService();
+        private RoomAvService roomavService = new RoomAvService();
+        private RoomService roomService = new RoomService();
+        private BookingService bookingService = new BookingService();
+        private NotificationService notiService = new NotificationService();
+        private CustomerService cusService = new CustomerService();
         // GET: Book
         [HttpGet,]
         public ActionResult ConfirmRegistration()
         {
             return View();
         }
-        
+
 
         [HttpGet]
         public ActionResult CustomerRegistrasion(int id)
         {
-            var r = from room in this.roomRepo.GetAll()
+            var r = from room in this.roomService.GetAll()
                     where room.RoomId == id
                     select room.Catagory.ToString();
 
-            var c = from room in this.roomRepo.GetAll()
+            var c = from room in this.roomService.GetAll()
                     select room.Catagory.ToString();
 
             ViewBag.SelectedCatagory = r;
@@ -56,43 +58,54 @@ namespace Hotel_Management.Controllers
         [HttpPost]
         public ActionResult CustomerRegistrasion(Customer customer, int id)
         {
-            
-                var r = from room in this.roomRepo.GetAll()
-                        where room.RoomId == id
-                        select room.Catagory.ToString();
 
-                var c = from room in this.roomRepo.GetAll()
-                        select room.Catagory.ToString();
+            var r = from rm in this.roomService.GetAll()
+                    where rm.RoomId == id
+                    select rm.Catagory.ToString();
 
-                ViewBag.SelectedCatagory = r;
-                ViewBag.Catagory = c;
+            var c = from rm in this.roomService.GetAll()
+                    select rm.Catagory.ToString();
 
-                var av = from item in this.roomavRepo.GetAll()
-                         where item.Availability == true && item.Room.Catagory == Request["catagory"]
-                         select item.RoomId.ToString();
+            ViewBag.SelectedCatagory = r;
+            ViewBag.Catagory = c;
 
-                ViewBag.list = av;
+            var av = from item in this.roomavService.GetAll()
+                     where item.Availability == true && item.Room.Catagory == Request["catagory"]
+                     select item.RoomId.ToString();
+
+            ViewBag.list = av;
 
 
-                customer.Catagory = Request["catagory"];
-                this.cusRepo.Insert(customer);
+            customer.Catagory = Request["catagory"];
+            this.cusService.Insert(customer);
 
-                Notification n = new Notification()
-                {
-                    CustomerId = this.cusRepo.Get(customer.Username).CustomerId,
-                    Seen = false,
-                    Time = DateTime.Now
-                };
-                this.notiRepo.Insert(n);
+            Room room = this.roomService.Get(id);
+            RoomAv roomAv = this.roomavService.GetByRoomId(room.RoomId);
 
-                return View("ConfirmRegistration");
-            
+            Booking booking = new Booking()
+            {
+                CustomerId = customer.CustomerId,
+                RoomAvId = roomAv.RoomAvId,
+                TotalCost = room.Rent * customer.Nights
+            };
+            this.bookingService.Insert(booking);
+
+            Notification n = new Notification()
+            {
+                CustomerId = this.cusService.Get(customer.Username).CustomerId,
+                Seen = false,
+                Time = DateTime.Now
+            };
+            this.notiService.Insert(n);
+
+            return View("ConfirmRegistration");
+
         }
-        
+
 
         public ActionResult GetRoom(string catagory = "")
         {
-            var av = from item in this.roomavRepo.GetAll()
+            var av = from item in this.roomavService.GetAll()
                      where item.Availability == true && item.Room.Catagory == catagory
                      select item.RoomId.ToString();
             return Json(new { result = av }, JsonRequestBehavior.AllowGet);

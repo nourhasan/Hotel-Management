@@ -1,4 +1,4 @@
-﻿@model DataLayer.Customer
+﻿@model EntityLayer.Customer
 @{
     Layout = "";
 }
@@ -41,7 +41,7 @@
         });
        
 
-        $(document).ready(function () {
+        /*$(document).ready(function () {
             $("#catagory").change(function () {
                 catagory = $("#catagory").val();
                 $.ajax({
@@ -53,6 +53,18 @@
                     }
                 });
             })
+        });*/
+
+        $(function () {
+            $("#catagory").change(function () {
+                $.ajax({
+                    url: "http://localhost:13533/api/roomav/Search/" + $('#catagory  option:selected').text() ,
+                    method: 'GET',
+                    success: function (data) {
+                        $("#result").html(data.length + " Rooms are available");
+                    }
+                });
+            });
         });
 
         $(document).ready(function () {

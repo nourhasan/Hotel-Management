@@ -1,4 +1,5 @@
-﻿using DataLayer;
+﻿using EntityLayer;
+using Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Hotel_Management.Controllers
 {
     public class HomeController : Controller
     {
-        private MessageRepository msgRepo = new MessageRepository();
+        private MessageService msgService = new MessageService();
         // GET: Home
         public ActionResult Index()
         {
@@ -35,16 +36,16 @@ namespace Hotel_Management.Controllers
                 Seen = false
             };
 
-            this.msgRepo.Insert(msg);
+            this.msgService.Insert(msg);
             return View("Confirmation");
         }
-        
+
 
         public ActionResult Getmessages()
         {
-            var msg = from item in this.msgRepo.GetAll()
-                       where item.Seen == false
-                       select item.MessageId.ToString();
+            var msg = from item in this.msgService.GetAll()
+                      where item.Seen == false
+                      select item.MessageId.ToString();
             return Json(new { result = msg }, JsonRequestBehavior.AllowGet);
         }
 

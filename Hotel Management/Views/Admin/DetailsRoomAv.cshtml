@@ -1,4 +1,4 @@
-﻿@model DataLayer.RoomAvModel
+﻿@model EntityLayer.RoomAvModel
 
 
 <!DOCTYPE html>
@@ -47,7 +47,7 @@
         </dl>
     </div>
     <p>
-        @Html.ActionLink("Edit", "Edit", new { id = Model.RoomAvId }) |
+        @Html.ActionLink("Edit", "EditRoomAv", new { id = Model.RoomAvId }) |
         @Html.ActionLink("Back to List", "AvailableRoom")
     </p>
 </body>

@@ -1,4 +1,5 @@
-﻿using DataLayer;
+﻿using Service;
+using EntityLayer;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,15 +10,15 @@ namespace Hotel_Management.Controllers
 {
     public class AdminController : Controller
     {
-        private AdminRepository adminRepo = new AdminRepository();
-        private EmployeeRepository empRepo = new EmployeeRepository();
-        private RoomRepository roomRepo = new RoomRepository();
-        private RoomAvRepository roomavRepo = new RoomAvRepository();
-        private BookingRepository bookingRepo = new BookingRepository();
-        private UserBalanceRepository UserBalanceRepo = new UserBalanceRepository();
-        private CustomerRepository cusRepo = new CustomerRepository();
-        private NotificationRepository notiRepo = new NotificationRepository();
-        private MessageRepository msgRepo = new MessageRepository();
+        private AdminService adminService = new AdminService();
+        private EmployeeService empService = new EmployeeService();
+        private RoomService roomService = new RoomService();
+        private RoomAvService roomavService = new RoomAvService();
+        private BookingService bookingService = new BookingService();
+        private UserBalanceService UserBalanceService = new UserBalanceService();
+        private CustomerService cusService = new CustomerService();
+        private NotificationService notiService = new NotificationService();
+        private MessageService msgService = new MessageService();
         public static int tempId = 0;
         public ActionResult Index()
         {
@@ -34,7 +35,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.adminRepo.GetAll());
+            return View(adminService.GetAll());
         }
         [HttpGet]
         public ActionResult CreateAdmin()
@@ -65,7 +66,7 @@ namespace Hotel_Management.Controllers
             if (ModelState.IsValid)
             {
 
-                this.adminRepo.Insert(admin);
+                this.adminService.Insert(admin);
                 return RedirectToAction("AdminProfile");
             }
             else
@@ -80,7 +81,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.adminRepo.Get(id));
+            return View(this.adminService.Get(id));
         }
 
         [HttpPost]
@@ -91,7 +92,7 @@ namespace Hotel_Management.Controllers
                 return Redirect("/unauthorized");
             }
 
-            this.adminRepo.Update(admin);
+            this.adminService.Update(admin);
             return RedirectToAction("AdminProfile");
 
 
@@ -104,7 +105,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.adminRepo.Get(id));
+            return View(this.adminService.Get(id));
         }
 
         [HttpGet]
@@ -114,7 +115,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.adminRepo.Get(id));
+            return View(this.adminService.Get(id));
         }
 
         [HttpPost, ActionName("AdminProfileDelete")]
@@ -124,7 +125,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.adminRepo.Delete(id);
+            this.adminService.Delete(id);
             return RedirectToAction("AdminProfile");
         }
         [HttpGet]
@@ -135,9 +136,9 @@ namespace Hotel_Management.Controllers
                 return Redirect("/unauthorized");
             }
             tempId = id;
-            Customer cs = this.cusRepo.Get(id);
+            Customer cs = this.cusService.Get(id);
 
-            var avRoom = from item in this.roomavRepo.GetAll()
+            var avRoom = from item in this.roomavService.GetAll()
                          where item.Availability == true && item.Room.Catagory == cs.Catagory
                          select item.RoomAvId;
             ViewBag.avRoom = avRoom;
@@ -149,7 +150,7 @@ namespace Hotel_Management.Controllers
         {
             float TotalCost = 0;
 
-            var cus = from item in this.bookingRepo.GetAll()
+            var cus = from item in this.bookingService.GetAll()
                       where item.CustomerId == id
                       select item.TotalCost;
 
@@ -168,25 +169,25 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            Customer cs = this.cusRepo.Get(tempId);
+            Customer cs = this.cusService.Get(tempId);
 
             Booking b = new Booking()
             {
                 CustomerId = cs.CustomerId,
                 RoomAvId = Int32.Parse(Request["room"]),
-                TotalCost = this.roomRepo.Get(cs.Catagory).Rent * cs.Nights
+                TotalCost = this.roomService.Get(cs.Catagory).Rent * cs.Nights
             };
 
-            this.bookingRepo.Insert(b);
+            this.bookingService.Insert(b);
 
-            RoomAv rav = this.roomavRepo.Get(b.RoomAvId);
+            RoomAv rav = this.roomavService.Get(b.RoomAvId);
             rav.Availability = false;
-            this.roomavRepo.Update(rav);
+            this.roomavService.Update(rav);
 
             UserBalance xyz = new UserBalance();
-            xyz = this.UserBalanceRepo.GetByCustomer(cs.CustomerId);
+            xyz = this.UserBalanceService.GetByCustomer(cs.CustomerId);
 
-            var ubc = from item in this.UserBalanceRepo.GetAll()
+            var ubc = from item in this.UserBalanceService.GetAll()
                       where item.CustomerId == cs.CustomerId
                       select item.CustomerId;
 
@@ -201,14 +202,14 @@ namespace Hotel_Management.Controllers
                         Paid = 0,
                         RemainingAcount = TotalCost(cs.CustomerId)
                     };
-                    this.UserBalanceRepo.Insert(balance);
+                    this.UserBalanceService.Insert(balance);
                 }
                 else
                 {
-                    UserBalance balance = this.UserBalanceRepo.GetByCustomer(cs.CustomerId);
+                    UserBalance balance = this.UserBalanceService.GetByCustomer(cs.CustomerId);
                     balance.UserBalanceAmount = TotalCost(cs.CustomerId);
                     balance.RemainingAcount = TotalCost(cs.CustomerId);
-                    this.UserBalanceRepo.Update(balance);
+                    this.UserBalanceService.Update(balance);
                 }
             }
             catch (Exception ex)
@@ -221,7 +222,7 @@ namespace Hotel_Management.Controllers
                     RemainingAcount = TotalCost(cs.CustomerId)
                 };
                 Console.WriteLine(ex.ToString());
-                this.UserBalanceRepo.Insert(balance);
+                this.UserBalanceService.Insert(balance);
             }
             
 
@@ -234,7 +235,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.bookingRepo.GetAll());
+            return View(this.bookingService.GetAll());
         }
         
         public ActionResult DetailsBooking(int id)
@@ -243,7 +244,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.cusRepo.Get(id));
+            return View(this.cusService.Get(id));
         }
 
         [HttpGet]
@@ -253,7 +254,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.UserBalanceRepo.GetByCustomer(id));
+            return View(this.UserBalanceService.GetByCustomer(id));
         }
 
         public ActionResult UserBalances()
@@ -262,7 +263,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.UserBalanceRepo.GetAll());
+            return View(this.UserBalanceService.GetAll());
         }
 
         [HttpGet]
@@ -272,7 +273,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.UserBalanceRepo.Get(id));
+            return View(this.UserBalanceService.Get(id));
         }
 
         [HttpPost]
@@ -284,7 +285,7 @@ namespace Hotel_Management.Controllers
             }
             ub.Paid = ub.Paid;
             ub.RemainingAcount = ub.UserBalanceAmount - ub.Paid;
-            this.UserBalanceRepo.Update(ub);
+            this.UserBalanceService.Update(ub);
             return Redirect("/Admin/DetailsUserBalance?id=" + ub.CustomerId);
         }
 
@@ -294,7 +295,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.UserBalanceRepo.Get(id));
+            return View(this.UserBalanceService.Get(id));
         }
 
         //Customer Start -------------------------------------------------------------------
@@ -304,7 +305,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.cusRepo.GetAll());
+            return View(this.cusService.GetAll());
         }
 
 
@@ -315,7 +316,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.cusRepo.Get(id));
+            return View(this.cusService.Get(id));
         }
 
         [HttpPost]
@@ -327,7 +328,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.cusRepo.Update(customer);
+                this.cusService.Update(customer);
                 return RedirectToAction("Customers");
             }
             else
@@ -343,7 +344,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.cusRepo.Get(id));
+            return View(this.cusService.Get(id));
         }
 
         [HttpGet]
@@ -353,7 +354,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.cusRepo.Get(id));
+            return View(this.cusService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteCustomer")]
@@ -363,7 +364,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.cusRepo.Delete(id);
+            this.cusService.Delete(id);
             return RedirectToAction("Customers");
         }
         // Customer End -------------------------------------------------------------------
@@ -375,7 +376,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.notiRepo.GetAll());
+            return View(this.notiService.GetAll());
         }
 
         [HttpGet]
@@ -386,11 +387,11 @@ namespace Hotel_Management.Controllers
                 return Redirect("/unauthorized");
             }
 
-            Notification n = this.notiRepo.Get(id);
+            Notification n = this.notiService.Get(id);
             n.Seen = true;
-            this.notiRepo.Update(n);
+            this.notiService.Update(n);
 
-            return View(this.cusRepo.Get(id));
+            return View(this.cusService.Get(id));
         }
 
         [HttpGet]
@@ -400,7 +401,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.notiRepo.Get(id));
+            return View(this.notiService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteNotification")]
@@ -410,7 +411,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.notiRepo.Delete(id);
+            this.notiService.Delete(id);
             return RedirectToAction("Notifications");
         }
 
@@ -422,7 +423,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            var noti = from item in this.notiRepo.GetAll()
+            var noti = from item in this.notiService.GetAll()
                        where item.Seen == false
                        select item.NotificationId.ToString();
             return Json(new { result = noti }, JsonRequestBehavior.AllowGet);
@@ -434,7 +435,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            var msg = from item in this.msgRepo.GetAll()
+            var msg = from item in this.msgService.GetAll()
                        where item.Seen == false
                        select item.MessageId.ToString();
             return Json(new { result = msg }, JsonRequestBehavior.AllowGet);
@@ -442,27 +443,27 @@ namespace Hotel_Management.Controllers
 
         public ActionResult Messages()
         {
-            return View(this.msgRepo.GetAll());
+            return View(this.msgService.GetAll());
         }
 
         public ActionResult DetailsMessage(int id)
         {
-            Message msg = this.msgRepo.Get(id);
+            Message msg = this.msgService.Get(id);
             msg.Seen = true;
-            this.msgRepo.Update(msg);
+            this.msgService.Update(msg);
             return View(msg);
         }
 
         [HttpGet]
         public ActionResult DeleteMessage(int id)
         {
-            return View(this.msgRepo.Get(id));
+            return View(this.msgService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteMessage")]
         public ActionResult ConfirmDeleteMessage(int id)
         {
-            this.msgRepo.Delete(id);
+            this.msgService.Delete(id);
             return View();
         }
 
@@ -478,7 +479,7 @@ namespace Hotel_Management.Controllers
                 return Redirect("/unauthorized");
             }
             //DataContext db = new DataContext();
-            List<RoomAv> roomlist = roomavRepo.GetAll();
+            List<RoomAv> roomlist = roomavService.GetAll();
             RoomAvModel roomAvModel = new RoomAvModel();
             List<RoomAvModel> roomMList = roomlist.Select
                 (x => new RoomAvModel
@@ -499,7 +500,7 @@ namespace Hotel_Management.Controllers
                 return Redirect("/unauthorized");
             }
            // DataContext db = new DataContext();
-            List<Room> roomList = roomRepo.GetAll();
+            List<Room> roomList = roomService.GetAll();
             ViewBag.RoomList = new SelectList(roomList,"RoomId","Catagory");
             
             return View();
@@ -514,7 +515,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.roomavRepo.Insert(roomAv);
+                this.roomavService.Insert(roomAv);
                 return RedirectToAction("AvailableRoom");
             }
             else
@@ -533,7 +534,7 @@ namespace Hotel_Management.Controllers
             //DataContext db = new DataContext();
 
 
-            return View(this.roomavRepo.Get(id));
+            return View(this.roomavService.Get(id));
 
 
         }
@@ -548,7 +549,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.roomavRepo.Update(roomAv);
+                this.roomavService.Update(roomAv);
                 return RedirectToAction("AvailableRoom");
             }
             else
@@ -579,7 +580,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.roomavRepo.Get(id));
+            return View(this.roomavService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteRoomAv")]
@@ -589,7 +590,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.roomavRepo.Delete(id);
+            this.roomavService.Delete(id);
             return RedirectToAction("AvailableRoom");
         }
 
@@ -601,7 +602,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.empRepo.GetAll());
+            return View(this.empService.GetAll());
         }
 
         [HttpGet]
@@ -623,7 +624,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.empRepo.Insert(emp);
+                this.empService.Insert(emp);
                 return RedirectToAction("Employees");
             }
             else
@@ -639,7 +640,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.empRepo.Get(id));
+            return View(this.empService.Get(id));
         }
 
         [HttpPost]
@@ -651,7 +652,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.empRepo.Update(emp);
+                this.empService.Update(emp);
                 return RedirectToAction("Employees");
             }
             else
@@ -667,7 +668,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.empRepo.Get(id));
+            return View(this.empService.Get(id));
         }
 
         [HttpGet]
@@ -677,7 +678,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.empRepo.Get(id));
+            return View(this.empService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteEmployee")]
@@ -687,7 +688,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.empRepo.Delete(id);
+            this.empService.Delete(id);
             return RedirectToAction("Employees");
         }
         // Employee End -------------------------------------------------------------------
@@ -713,7 +714,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.roomRepo.GetAll());
+            return View(this.roomService.GetAll());
         }
 
         [HttpGet]
@@ -735,7 +736,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.roomRepo.Insert(room);
+                this.roomService.Insert(room);
                 return RedirectToAction("Rooms");
             }
             else
@@ -751,7 +752,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.roomRepo.Get(id));
+            return View(this.roomService.Get(id));
         }
 
         [HttpPost]
@@ -763,7 +764,7 @@ namespace Hotel_Management.Controllers
             }
             if (ModelState.IsValid)
             {
-                this.roomRepo.Update(room);
+                this.roomService.Update(room);
                 return RedirectToAction("Rooms");
             }
             else
@@ -779,7 +780,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.roomRepo.Get(id));
+            return View(this.roomService.Get(id));
         }
 
         [HttpGet]
@@ -789,7 +790,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            return View(this.roomRepo.Get(id));
+            return View(this.roomService.Get(id));
         }
 
         [HttpPost, ActionName("DeleteRoom")]
@@ -799,7 +800,7 @@ namespace Hotel_Management.Controllers
             {
                 return Redirect("/unauthorized");
             }
-            this.roomRepo.Delete(id);
+            this.roomService.Delete(id);
             return RedirectToAction("Rooms");
         }
        
@@ -809,7 +810,7 @@ namespace Hotel_Management.Controllers
         {
             float remaining = 0;
 
-            UserBalance ub = this.UserBalanceRepo.GetByCustomer(cid);
+            UserBalance ub = this.UserBalanceService.GetByCustomer(cid);
             remaining = ub.UserBalanceAmount - paid;
 
 

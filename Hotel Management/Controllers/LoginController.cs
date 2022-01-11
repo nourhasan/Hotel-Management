@@ -1,4 +1,5 @@
-﻿using DataLayer;
+﻿using EntityLayer;
+using Service;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Hotel_Management.Controllers
 {
     public class LoginController : Controller
     {
-        private AdminRepository adminRepo = new AdminRepository();
+        private AdminService adminService = new AdminService();
         // GET: Login
         [HttpGet]
         public ActionResult Index()
@@ -20,7 +21,7 @@ namespace Hotel_Management.Controllers
         [HttpPost, ActionName("Index")]
         public ActionResult Submit(string username, string pass)
         {
-            Admin user = this.adminRepo.GetByEmailPass(username, pass);
+            Admin user = this.adminService.GetByEmailPass(username, pass);
             if (user != null)
             {
 
@@ -57,7 +58,7 @@ namespace Hotel_Management.Controllers
             if (ModelState.IsValid)
             {
 
-                this.adminRepo.Insert(admin);
+                this.adminService.Insert(admin);
                 return RedirectToAction("Admin");
             }
             else
